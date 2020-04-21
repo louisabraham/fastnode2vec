@@ -24,6 +24,27 @@ print(n2v.wv["a"])
 
 ## CLI
 
+
+```
+Usage: fastnode2vec [OPTIONS] FILENAME
+
+Options:
+  --directed
+  --dim INTEGER          [required]
+  --p FLOAT
+  --q FLOAT
+  --walk-length INTEGER  [required]
+  --context INTEGER
+  --epochs INTEGER       [required]
+  --workers INTEGER
+  --batch-walks INTEGER
+  --debug PATH
+  --output PATH
+  --help                 Show this message and exit.
+
+```
+
+
 Compute embeddings of the [Gnutella peer-to-peer network](https://snap.stanford.edu/data/p2p-Gnutella08.html):
 
 ```
