@@ -6,6 +6,9 @@ from numba import njit
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 
+@njit(nogil=True)
+def _neighbors(indptr, indices, t):
+    return indices[indptr[t] : indptr[t + 1]]
 
 @njit(nogil=True)
 def _random_walk(indptr, indices, walk_length, p, q, t):
@@ -16,9 +19,9 @@ def _random_walk(indptr, indices, walk_length, p, q, t):
 
     walk = np.empty(walk_length, dtype=indices.dtype)
     walk[0] = t
-    walk[1] = np.random.choice(indices[indptr[t] : indptr[t + 1]])
+    walk[1] = np.random.choice(_neighbors(indptr, indices, t))
     for j in range(2, walk_length):
-        neighbors = indices[indptr[walk[j - 1]] : indptr[walk[j - 1] + 1]]
+        neighbors = _neighbors(indptr, indices, walk[j - 1])
         if p == q == 1:
             # faster version
             walk[j] = np.random.choice(neighbors)
@@ -29,7 +32,7 @@ def _random_walk(indptr, indices, walk_length, p, q, t):
             if new_node == walk[j - 2]:
                 if r < prob_0:
                     break
-            elif np.searchsorted(neighbors, new_node):
+            elif np.searchsorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
                 if r < prob_1:
                     break
             elif r < prob_2:
