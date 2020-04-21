@@ -6,9 +6,11 @@ from numba import njit
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 
+
 @njit(nogil=True)
 def _neighbors(indptr, indices, t):
     return indices[indptr[t] : indptr[t + 1]]
+
 
 @njit(nogil=True)
 def _random_walk(indptr, indices, walk_length, p, q, t):
