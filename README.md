@@ -1,6 +1,9 @@
 [![PyPI
 version](https://badge.fury.io/py/fastnode2vec.svg)](https://badge.fury.io/py/fastnode2vec)
 
+[![DOI](https://zenodo.org/badge/257390910.svg)](https://zenodo.org/badge/latestdoi/257390910)
+
+
 # fastnode2vec
 
 *Really* fast implementation of node2vec based on [numba](https://numba.pydata.org/) and [gensim](https://radimrehurek.com/gensim/). Memory usage is **linear** and scales with your data unlike most other implementations. The algorithm is described in this [blog post](https://louisabraham.github.io/articles/node2vec-sampling.html).
