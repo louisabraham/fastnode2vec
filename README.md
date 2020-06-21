@@ -3,7 +3,7 @@ version](https://badge.fury.io/py/fastnode2vec.svg)](https://badge.fury.io/py/fa
 
 # fastnode2vec
 
-*Really* fast implementation of node2vec based on [numba](https://numba.pydata.org/) and [gensim](https://radimrehurek.com/gensim/). Memory usage is **linear** and scales with your data unlike most other implementations.
+*Really* fast implementation of node2vec based on [numba](https://numba.pydata.org/) and [gensim](https://radimrehurek.com/gensim/). Memory usage is **linear** and scales with your data unlike most other implementations. The algorithm is described in this [blog post](https://louisabraham.github.io/articles/node2vec-sampling.html).
 
 ## API
 
