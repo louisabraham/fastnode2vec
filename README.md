@@ -34,6 +34,7 @@ Usage: fastnode2vec [OPTIONS] FILENAME
 
 Options:
   --directed
+  --weighted
   --dim INTEGER          [required]
   --p FLOAT
   --q FLOAT
