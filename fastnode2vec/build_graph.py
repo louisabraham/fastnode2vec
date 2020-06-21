@@ -5,7 +5,7 @@ import pickle
 from .graph import Graph
 
 
-def build_graph(filename, directed, n_edges=None, cache=False):
+def build_graph(filename, directed, weighted, n_edges=None, cache=False):
     filename = Path(filename)
     cached = filename.parent / (filename.name + ".graph.pk")
 
@@ -25,7 +25,7 @@ def build_graph(filename, directed, n_edges=None, cache=False):
                     continue
                 yield row.split()
 
-    graph = Graph(make_edges(), n_edges=n_edges, directed=directed)
+    graph = Graph(make_edges(), directed=directed, weighted=weighted, n_edges=n_edges)
 
     if cache:
         with open(cached, "wb") as f:
@@ -40,8 +40,10 @@ if __name__ == "__main__":
 
     @click.command()
     @click.argument("filename", type=click.Path(exists=True))
+    @click.option("--directed", is_flag=True)
+    @click.option("--weighted", is_flag=True)
     @click.option("--n-edges", type=int, default=None)
-    def _build_graph(filename, n_edges=None):
-        return build_graph(filename, n_edges, cache=True)
+    def _build_graph(filename, directed, weighted, n_edges=None):
+        return build_graph(filename, directed, weighted, n_edges, cache=True)
 
     _build_graph()

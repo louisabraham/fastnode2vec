@@ -9,6 +9,7 @@ from .node2vec import Node2Vec
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 @click.option("--directed", is_flag=True)
+@click.option("--weighted", is_flag=True)
 @click.option("--dim", type=int, required=True)
 @click.option("--p", type=float, default=1)
 @click.option("--q", type=float, default=1)
@@ -22,7 +23,8 @@ from .node2vec import Node2Vec
 def node2vec(
     filename: str,
     directed: bool,
-    dim,
+    weighted: bool,
+    dim: int,
     p: float,
     q: float,
     walk_length: int,
@@ -41,7 +43,7 @@ def node2vec(
             filename=debug,
         )
 
-    graph = build_graph(filename, directed)
+    graph = build_graph(filename, directed, weighted)
     n2v = Node2Vec(
         graph,
         dim,
