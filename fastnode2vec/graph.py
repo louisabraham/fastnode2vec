@@ -25,6 +25,11 @@ def _neighbors(indptr, indices_or_data, t):
 
 
 @njit(nogil=True)
+def _isin_sorted(a, x):
+    return a[np.searchsorted(a, x)] == x
+
+
+@njit(nogil=True)
 def _random_walk(indptr, indices, walk_length, p, q, t):
     max_prob = max(1 / p, 1, 1 / q)
     prob_0 = 1 / p / max_prob
@@ -46,7 +51,7 @@ def _random_walk(indptr, indices, walk_length, p, q, t):
             if new_node == walk[j - 2]:
                 if r < prob_0:
                     break
-            elif np.searchsorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
+            elif _isin_sorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
                 if r < prob_1:
                     break
             elif r < prob_2:
@@ -78,7 +83,7 @@ def _random_walk_weighted(indptr, indices, data, walk_length, p, q, t):
             if new_node == walk[j - 2]:
                 if r < prob_0:
                     break
-            elif np.searchsorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
+            elif _isin_sorted(_neighbors(indptr, indices, walk[j - 2]), new_node):
                 if r < prob_1:
                     break
             elif r < prob_2:
