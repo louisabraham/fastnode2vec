@@ -13,7 +13,11 @@ version](https://badge.fury.io/py/fastnode2vec.svg)](https://badge.fury.io/py/fa
 from fastnode2vec import Graph, Node2Vec
 
 graph = Graph([("a", "b"), ("b", "c"), ("c", "a"), ("a", "d")],
-              directed=False)
+              directed=False, weighted=False)
+
+# or
+graph = Graph([("a", "b", 1), ("b", "c", 2), ("c", "a", 3), ("a", "d", 4)],
+              directed=False, weighted=True)
 
 n2v = Node2Vec(graph, dim=10, walk_length=100, context=10, p=2.0, q=0.5, workers=2)
 
