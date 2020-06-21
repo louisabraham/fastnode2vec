@@ -68,3 +68,18 @@ from gensim.models import KeyedVectors
 
 wv = KeyedVectors.load("p2p-Gnutella08.txt.gz.wv", mmap='r')
 ```
+
+## Citing
+
+If you have used this software in a scientific publication, please cite it using the following BibLaTeX code:
+
+```
+@software{fastnode2vec,
+  author       = {Louis Abraham},
+  title        = {fastnode2vec},
+  year         = 2020,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.3902632},
+  url          = {https://doi.org/10.5281/zenodo.3902632}
+}
+```
