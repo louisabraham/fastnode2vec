@@ -1,6 +1,5 @@
 [![PyPI
 version](https://badge.fury.io/py/fastnode2vec.svg)](https://badge.fury.io/py/fastnode2vec)
-
 [![DOI](https://zenodo.org/badge/257390910.svg)](https://zenodo.org/badge/latestdoi/257390910)
 
 
