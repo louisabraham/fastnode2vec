@@ -1,7 +1,13 @@
 from gensim.models import Word2Vec
 import numpy as np
+from numba import njit
 
 from tqdm import tqdm
+
+
+@njit
+def set_seed(seed):
+    np.random.seed(seed)
 
 
 class Node2Vec(Word2Vec):
@@ -15,6 +21,7 @@ class Node2Vec(Word2Vec):
         q=1.0,
         workers=1,
         batch_walks=None,
+        seed=None,
         **args,
     ):
         # <https://github.com/RaRe-Technologies/gensim/issues/2801>
@@ -39,9 +46,12 @@ class Node2Vec(Word2Vec):
         self.walk_length = walk_length
         self.p = p
         self.q = q
+        self.seed = seed
 
-    def train(self, epochs, progress_bar=True, **kwargs):
+    def train(self, epochs, *, progress_bar=True, **kwargs):
         def gen_nodes(epochs):
+            if self.seed is not None:
+                np.random.seed(self.seed)
             for _ in range(epochs):
                 for i in np.random.permutation(len(self.graph.node_names)):
                     # dummy walk with same length
@@ -70,5 +80,7 @@ class Node2Vec(Word2Vec):
         return self.graph.generate_random_walk(self.walk_length, self.p, self.q, t)
 
     def _do_train_job(self, sentences, alpha, inits):
+        if self.seed is not None:
+            set_seed(self.seed)
         sentences = [self.generate_random_walk(w[0]) for w in sentences]
         return super()._do_train_job(sentences, alpha, inits)
