@@ -1,4 +1,5 @@
 from gensim.models import Word2Vec
+from gensim import __version__ as gensim_version
 import numpy as np
 from numba import njit
 
@@ -31,9 +32,13 @@ class Node2Vec(Word2Vec):
         else:
             batch_words = min(walk_length * batch_walks, 10000)
 
+        if gensim_version < "4.0.0":
+            args["iter"] = 1
+        else:
+            args["epochs"] = 1
+
         super().__init__(
             sg=1,
-            iter=1,
             size=dim,
             window=context,
             min_count=1,
