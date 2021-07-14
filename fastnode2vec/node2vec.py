@@ -34,12 +34,13 @@ class Node2Vec(Word2Vec):
 
         if gensim_version < "4.0.0":
             args["iter"] = 1
+            args["size"] = dim
         else:
             args["epochs"] = 1
+            args["vector_size"] = dim
 
         super().__init__(
             sg=1,
-            size=dim,
             window=context,
             min_count=1,
             workers=workers,
