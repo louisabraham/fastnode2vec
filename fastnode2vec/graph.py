@@ -38,9 +38,14 @@ def _random_walk(indptr, indices, walk_length, p, q, t):
 
     walk = np.empty(walk_length, dtype=indices.dtype)
     walk[0] = t
+    neighbors = _neighbors(indptr, indices, t)
+    if not neighbors:
+        return walk[:1]
     walk[1] = np.random.choice(_neighbors(indptr, indices, t))
     for j in range(2, walk_length):
         neighbors = _neighbors(indptr, indices, walk[j - 1])
+        if not neighbors:
+            return walk[:j]
         if p == q == 1:
             # faster version
             walk[j] = np.random.choice(neighbors)
@@ -69,11 +74,16 @@ def _random_walk_weighted(indptr, indices, data, walk_length, p, q, t):
 
     walk = np.empty(walk_length, dtype=indices.dtype)
     walk[0] = t
+    neighbors = _neighbors(indptr, indices, t)
+    if not neighbors:
+        return walk[:1]
     walk[1] = _neighbors(indptr, indices, t)[
         np.searchsorted(_neighbors(indptr, data, t), np.random.rand())
     ]
     for j in range(2, walk_length):
         neighbors = _neighbors(indptr, indices, walk[j - 1])
+        if not neighbors:
+            return walk[:j]
         neighbors_p = _neighbors(indptr, data, walk[j - 1])
         if p == q == 1:
             # faster version
