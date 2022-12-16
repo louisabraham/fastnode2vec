@@ -2,8 +2,10 @@ from gensim.models import Word2Vec
 from gensim import __version__ as gensim_version
 import numpy as np
 from numba import njit
-
-from tqdm.auto import tqdm
+from typing import Optional, Union, List
+from multiprocessing import cpu_count
+from tqdm.auto import trange
+from .graph import Graph
 
 
 @njit
@@ -14,17 +16,53 @@ def set_seed(seed):
 class Node2Vec(Word2Vec):
     def __init__(
         self,
-        graph,
-        dim,
-        walk_length,
-        context,
-        p=1.0,
-        q=1.0,
-        workers=1,
-        batch_walks=None,
-        seed=None,
-        **args,
+        graph: Graph,
+        dim: int,
+        walk_length: int,
+        window: int,
+        p: float = 1.0,
+        q: float = 1.0,
+        workers: Union[int, str] = "auto",
+        batch_walks: Optional[int] = None,
+        use_skipgram: bool = True,
+        seed: Optional[int] = None,
+        **kwargs,
     ):
+        """Create a new instance of Node2Vec.
+
+        Parameters
+        ---------------------------
+        graph: Graph
+            Graph object whose nodes are to be embedded.
+        dim: int
+            The dimensionality of the embedding
+        walk_length: int
+            Length of the random walk to be computed
+        window: int
+            The dimension of the window.
+            This is HALF of the context, as gensim will
+            consider as context all nodes before `window`
+            and after `window`.
+        p: float = 1.0
+            The higher the value, the lower the probability to return to
+            the previous node during a walk.
+        q: float = 1.0
+            The higher the value, the lower the probability to return to
+            a node connected to a previous node during a walk.
+        workers: Union[int str] = "auto"
+            Number of workers to use in GenSim. By default, "auto",
+            that is we use all of the available threads.
+        batch_walks: Optional[int] = None
+            Target size (in words) for batches of examples passed to worker threads (and
+            thus cython routines).(Larger batches will be passed if individual
+            texts are longer than 10000 words, but the standard cython code truncates to that maximum.)
+        use_skipgram: bool = True
+            Whether to use SkipGram or, alternatively, CBOW as node embedding model.
+        seed: Optional[int] = None
+            The seed to use to reproduce these experiments.
+        **kwargs
+            Parameters to be forwarded to parent class.
+        """
         # <https://github.com/RaRe-Technologies/gensim/issues/2801>
         assert walk_length < 10000
         if batch_walks is None:
@@ -32,20 +70,23 @@ class Node2Vec(Word2Vec):
         else:
             batch_words = min(walk_length * batch_walks, 10000)
 
+        if workers == "auto":
+            workers = cpu_count()
+
         if gensim_version < "4.0.0":
-            args["iter"] = 1
-            args["size"] = dim
+            kwargs["iter"] = 1
+            kwargs["size"] = dim
         else:
-            args["epochs"] = 1
-            args["vector_size"] = dim
+            kwargs["epochs"] = 1
+            kwargs["vector_size"] = dim
 
         super().__init__(
-            sg=1,
-            window=context,
+            sg=int(use_skipgram),
+            window=window,
             min_count=1,
             workers=workers,
             batch_words=batch_words,
-            **args,
+            **kwargs,
         )
         self.build_vocab(([w] for w in graph.node_names))
         self.graph = graph
@@ -54,39 +95,77 @@ class Node2Vec(Word2Vec):
         self.q = q
         self.seed = seed
 
-    def train(self, epochs, *, progress_bar=True, **kwargs):
-        def gen_nodes(epochs):
+    def train(self, epochs: int, *, verbose: bool = True, **kwargs):
+        """Train the model and compute the node embedding.
+        
+        Parameters
+        --------------------
+        epochs: int
+            Number of epochs to train the model for.
+        verbose: bool = True
+            Whether to show loading bar.
+        **kwargs
+            Parameters to be forwarded to parent class.
+        """
+        def gen_nodes():
+            """Number of epochs to compute."""
             if self.seed is not None:
                 np.random.seed(self.seed)
-            for _ in range(epochs):
+            
+            for _ in trange(
+                epochs,
+                dynamic_ncols=True,
+                desc="Epochs",
+                leave=False,
+                disable=not verbose
+            ):
                 for i in np.random.permutation(len(self.graph.node_names)):
                     # dummy walk with same length
                     yield [i] * self.walk_length
 
-        if progress_bar:
-
-            def pbar(it):
-                return tqdm(
-                    it, desc="Training", total=epochs * len(self.graph.node_names)
-                )
-
-        else:
-
-            def pbar(it):
-                return it
-
         super().train(
-            pbar(gen_nodes(epochs)),
+            gen_nodes(epochs),
             total_examples=epochs * len(self.graph.node_names),
             epochs=1,
             **kwargs,
         )
 
-    def generate_random_walk(self, t):
-        return self.graph.generate_random_walk(self.walk_length, self.p, self.q, t)
+    def generate_random_walk(self, source_node_id: int) -> List[int]:
+        """Returns random walk starting from the provided source node id.
+
+        Parameters
+        ----------
+        source_node_id: int
+            The node ID from which to start the random walk.
+
+        Returns
+        ----------
+        List containing random walk starting from provided node.
+        """
+        return self.graph.generate_random_walk(self.walk_length, self.p, self.q, source_node_id)
 
     def _do_train_job(self, sentences, alpha, inits):
+        """Train the model on a single batch of sentences.
+
+        Parameters
+        ----------
+        sentences : iterable of list of str
+            Corpus chunk to be used in this training batch.
+        alpha : float
+            The learning rate used in this batch.
+        inits : (np.ndarray, np.ndarray)
+            Each worker threads private work memory.
+
+        Returns
+        -------
+        (int, int)
+             2-tuple (effective word count after ignoring unknown words and sentence length trimming, total word count).
+
+        """
         if self.seed is not None:
             set_seed(self.seed)
-        sentences = [self.generate_random_walk(w[0]) for w in sentences]
+        sentences = [
+            self.generate_random_walk(w[0])
+            for w in sentences
+        ]
         return super()._do_train_job(sentences, alpha, inits)
