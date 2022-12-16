@@ -3,7 +3,7 @@ from gensim import __version__ as gensim_version
 import numpy as np
 from numba import njit
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 @njit

@@ -4,7 +4,7 @@ import numpy as np
 
 from numba import njit
 from scipy.sparse import csr_matrix
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 @njit(nogil=True)
