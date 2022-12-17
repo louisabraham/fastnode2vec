@@ -1,10 +1,10 @@
 from collections import defaultdict
 
 import numpy as np
-
+from typing import List, Iterable, Optional
 from numba import njit
 from scipy.sparse import csr_matrix
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 @njit(nogil=True)
@@ -105,10 +105,30 @@ def _random_walk_weighted(indptr, indices, data, walk_length, p, q, t):
 
 
 class Graph:
-    def __init__(self, edges, directed, weighted, n_edges=None):
-        if n_edges is None:
+    """Graph object to be used for sampling Node2Vec-style walks."""
+
+    def __init__(self, edges: Iterable, directed: bool, weighted: bool, verbose: bool = True, number_of_edges: Optional[int]=None):
+        """Create new Graph object.
+        
+        Parameters
+        ------------
+        edges: Iterable
+            Iteratable of tuples with the edges of the graph.
+            Note that we expect tuples of the form (src, dst)
+            in the case of an unweighted graph, and triples
+            of the form (src, dst, weight) in the case of a directed graph.
+        directed: bool
+            Whether to load the graph as directed or undirected.
+        weighted: bool
+            Whether to expect the graph has weights.
+        verbose: bool = True
+            Whether to show a loading bar.
+        number_of_edges: Optional[int] = None
+            The expected number of edges to to shown in the loading bar.
+        """
+        if number_of_edges is None:
             try:
-                n_edges = len(edges)
+                number_of_edges = len(edges)
             except TypeError:
                 pass
 
@@ -120,7 +140,14 @@ class Graph:
         to = []
         if weighted:
             data = []
-        for tpl in tqdm(edges, desc="Reading graph", total=n_edges):
+        for tpl in tqdm(
+            edges,
+            desc="Reading graph",
+            dynamic_ncols=True,
+            leave=False,
+            disable=not verbose,
+            total=number_of_edges
+        ):
             if weighted:
                 a, b, w = tpl
                 data.append(w)
@@ -154,11 +181,30 @@ class Graph:
             node_names[i] = name
         self.node_names = np.array(node_names)
 
-    def generate_random_walk(self, walk_length, p, q, start):
+    def generate_random_walk(self, walk_length: int, p: float, q: float, source_node_id: int) -> List[int]:
+        """Returns random walk starting from the provided source node id.
+
+        Parameters
+        ----------
+        walk_length: int
+            Length of the random walk to be computed
+        p: float = 1.0
+            The higher the value, the lower the probability to return to
+            the previous node during a walk.
+        q: float = 1.0
+            The higher the value, the lower the probability to return to
+            a node connected to a previous node during a walk.
+        source_node_id: int
+            The node ID from which to start the random walk.
+
+        Returns
+        ----------
+        List containing random walk starting from provided node.
+        """
         if self.weighted:
             walk = _random_walk_weighted(
-                self.indptr, self.indices, self.data, walk_length, p, q, start
+                self.indptr, self.indices, self.data, walk_length, p, q, source_node_id
             )
         else:
-            walk = _random_walk(self.indptr, self.indices, walk_length, p, q, start)
+            walk = _random_walk(self.indptr, self.indices, walk_length, p, q, source_node_id)
         return self.node_names[walk].tolist()
