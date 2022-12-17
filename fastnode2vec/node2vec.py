@@ -2,8 +2,7 @@ from gensim.models import Word2Vec
 from gensim import __version__ as gensim_version
 import numpy as np
 from numba import njit
-from typing import Optional, Union, List
-from multiprocessing import cpu_count
+from typing import Optional, List
 from tqdm.auto import trange
 from .graph import Graph
 
@@ -22,7 +21,7 @@ class Node2Vec(Word2Vec):
         window: int,
         p: float = 1.0,
         q: float = 1.0,
-        workers: Union[int, str] = "auto",
+        workers: int = 1,
         batch_walks: Optional[int] = None,
         use_skipgram: bool = True,
         seed: Optional[int] = None,
@@ -49,15 +48,38 @@ class Node2Vec(Word2Vec):
         q: float = 1.0
             The higher the value, the lower the probability to return to
             a node connected to a previous node during a walk.
-        workers: Union[int str] = "auto"
-            Number of workers to use in GenSim. By default, "auto",
-            that is we use all of the available threads.
+        workers : int, optional (default = 1)
+            The number of threads to use during the embedding process.
+            If set to -1, all available threads will be used.
+            By setting workers to -1, the Node2Vec model will use all
+            available threads during the embedding process.
+            This can improve the speed of the embedding process,
+            but it can also increase the risk of data-races,
+            especially on smaller graphs with a reduced number of nodes.
+            It is important to carefully consider the potential
+            impact of data-races and whether using all available
+            threads is appropriate for a given use case.
+            On large graphs, the risk of data-races is generally lower,
+            as there are more nodes for the threads to process and
+            the likelihood of multiple threads accessing the same
+            node at the same time is reduced. 
         batch_walks: Optional[int] = None
             Target size (in words) for batches of examples passed to worker threads (and
             thus cython routines).(Larger batches will be passed if individual
             texts are longer than 10000 words, but the standard cython code truncates to that maximum.)
         use_skipgram: bool = True
             Whether to use SkipGram or, alternatively, CBOW as node embedding model.
+            PLEASE BE AVISED THAT: In the Node2Vec model, a SkipGram model is used to
+            learn low-dimensional node embeddings from graph structure.
+            The SkipGram model learns to predict a target node given its surrounding context nodes,
+            while the CBOW (Continuous Bag-of-Words) model learns to predict a target
+            node given the sum of its context nodes. While it is possible to use a
+            CBOW model instead of a SkipGram model in the Node2Vec model,
+            it should be noted that this deviates from the original model and may
+            not always be the best choice for a given use case.
+            The user should carefully consider whether using a CBOW model is
+            appropriate for their specific application, as it may perform
+            differently than the original SkipGram model.
         seed: Optional[int] = None
             The seed to use to reproduce these experiments.
         **kwargs
@@ -69,9 +91,6 @@ class Node2Vec(Word2Vec):
             batch_words = 10000
         else:
             batch_words = min(walk_length * batch_walks, 10000)
-
-        if workers == "auto":
-            workers = cpu_count()
 
         if gensim_version < "4.0.0":
             kwargs["iter"] = 1
