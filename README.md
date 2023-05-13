@@ -80,6 +80,6 @@ If you have used this software in a scientific publication, please cite it using
   year         = 2020,
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.3902632},
-  url          = {https://doi.org/10.5281/zenodo.3902632}
+  url          = {https://github.com/louisabraham/fastnode2vec}
 }
 ```
