@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+
 from setuptools import setup
 
 
@@ -10,7 +11,7 @@ def read(fname):
 
 setup(
     name="fastnode2vec",
-    version="0.0.6",
+    version="0.0.7",
     author="Louis Abraham",
     license="MIT",
     author_email="louis.abraham@yahoo.fr",
