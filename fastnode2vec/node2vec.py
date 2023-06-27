@@ -1,9 +1,11 @@
-from gensim.models import Word2Vec
-from gensim import __version__ as gensim_version
+from typing import List, Optional
+
 import numpy as np
+from gensim import __version__ as gensim_version
+from gensim.models import Word2Vec
 from numba import njit
-from typing import Optional, List
 from tqdm.auto import trange
+
 from .graph import Graph
 
 
@@ -62,7 +64,7 @@ class Node2Vec(Word2Vec):
             On large graphs, the risk of data-races is generally lower,
             as there are more nodes for the threads to process and
             the likelihood of multiple threads accessing the same
-            node at the same time is reduced. 
+            node at the same time is reduced.
         batch_walks: Optional[int] = None
             Target size (in words) for batches of examples passed to worker threads (and
             thus cython routines).(Larger batches will be passed if individual
@@ -116,7 +118,7 @@ class Node2Vec(Word2Vec):
 
     def train(self, epochs: int, *, verbose: bool = True, **kwargs):
         """Train the model and compute the node embedding.
-        
+
         Parameters
         --------------------
         epochs: int
@@ -126,24 +128,25 @@ class Node2Vec(Word2Vec):
         **kwargs
             Parameters to be forwarded to parent class.
         """
+
         def gen_nodes():
             """Number of epochs to compute."""
             if self.seed is not None:
                 np.random.seed(self.seed)
-            
+
             for _ in trange(
                 epochs,
                 dynamic_ncols=True,
                 desc="Epochs",
                 leave=False,
-                disable=not verbose
+                disable=not verbose,
             ):
                 for i in np.random.permutation(len(self.graph.node_names)):
                     # dummy walk with same length
                     yield [i] * self.walk_length
 
         super().train(
-            gen_nodes(epochs),
+            gen_nodes(),
             total_examples=epochs * len(self.graph.node_names),
             epochs=1,
             **kwargs,
@@ -161,7 +164,9 @@ class Node2Vec(Word2Vec):
         ----------
         List containing random walk starting from provided node.
         """
-        return self.graph.generate_random_walk(self.walk_length, self.p, self.q, source_node_id)
+        return self.graph.generate_random_walk(
+            self.walk_length, self.p, self.q, source_node_id
+        )
 
     def _do_train_job(self, sentences, alpha, inits):
         """Train the model on a single batch of sentences.
@@ -183,8 +188,5 @@ class Node2Vec(Word2Vec):
         """
         if self.seed is not None:
             set_seed(self.seed)
-        sentences = [
-            self.generate_random_walk(w[0])
-            for w in sentences
-        ]
+        sentences = [self.generate_random_walk(w[0]) for w in sentences]
         return super()._do_train_job(sentences, alpha, inits)
