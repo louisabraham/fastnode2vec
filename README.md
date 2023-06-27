@@ -21,7 +21,7 @@ graph = Graph([("a", "b"), ("b", "c"), ("c", "a"), ("a", "d")],
 graph = Graph([("a", "b", 1), ("b", "c", 2), ("c", "a", 3), ("a", "d", 4)],
               directed=False, weighted=True)
 
-n2v = Node2Vec(graph, dim=10, walk_length=100, context=10, p=2.0, q=0.5, workers=2)
+n2v = Node2Vec(graph, dim=10, walk_length=100, window=10, p=2.0, q=0.5, workers=2)
 
 n2v.train(epochs=100)
 
